@@ -1,12 +1,34 @@
 package ru.yandex.practicum.filmorate.model;
 
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import ru.yandex.practicum.filmorate.validation.annotation.DateAfter;
+
+import java.time.LocalDate;
 
 /**
  * Film.
  */
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(of = { "id" })
 public class Film {
+
+    private Long id;
+
+    @NotNull
+    @NotBlank
+    private String name;
+
+    @Size(max = 200)
+    private String description;
+
+    @DateAfter(startDate = "1895-12-28")
+    private LocalDate releaseDate;
+
+    @Positive
+    private int duration;
 }
