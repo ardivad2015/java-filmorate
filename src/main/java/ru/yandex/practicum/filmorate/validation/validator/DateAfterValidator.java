@@ -7,21 +7,25 @@ import ru.yandex.practicum.filmorate.validation.annotation.DateAfter;
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 
 public class DateAfterValidator implements ConstraintValidator<DateAfter, LocalDate> {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private String startDate;
+    private LocalDate startDate;
 
     @Override
     public void initialize(DateAfter constraint) {
-        this.startDate = constraint.startDate();
+           this.startDate = LocalDate.parse(constraint.startDate(),DATE_TIME_FORMATTER);
     }
 
     @Override
     public boolean isValid(LocalDate localDate, ConstraintValidatorContext context) {
+        if (Objects.isNull(localDate)) {
+            return false;
+        }
         try {
-            return localDate.isAfter(LocalDate.parse(startDate,DATE_TIME_FORMATTER));
+            return localDate.isAfter(startDate);
         } catch (DateTimeException e) {
             return false;
         }

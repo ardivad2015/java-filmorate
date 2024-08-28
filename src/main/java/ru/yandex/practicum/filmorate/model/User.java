@@ -16,14 +16,13 @@ public class User {
     @Email
     private String email;
 
-    @NotNull
     @NotBlank
     @Pattern(regexp = "\\S*")
     private String login;
 
     private String name;
 
-    @Past
+    @PastOrPresent
     private LocalDate birthday;
 }
 

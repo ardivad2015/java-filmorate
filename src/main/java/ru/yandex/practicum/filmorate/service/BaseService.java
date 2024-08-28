@@ -1,22 +1,16 @@
 package ru.yandex.practicum.filmorate.service;
 
-import org.springframework.stereotype.Service;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-@Service
 public class BaseService<T> {
 
     protected final Map<Long, T> storage = new HashMap<>();
+    protected Long id = 0L;
 
-    public Long nextId() {
-        long currentMaxId = storage.keySet().stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
+    protected Long nextId() {
+        return ++id;
     }
 
     public Collection<T> all() {
