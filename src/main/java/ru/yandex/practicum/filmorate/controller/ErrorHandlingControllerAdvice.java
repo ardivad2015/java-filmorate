@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class ErrorHandlingControllerAdvice {
 
-    @ResponseBody
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ValidationErrorResponse onMethodArgumentNotValidException(MethodArgumentNotValidException e) {
@@ -29,7 +28,6 @@ public class ErrorHandlingControllerAdvice {
         return new ValidationErrorResponse(violations);
     }
 
-    @ResponseBody
     @ExceptionHandler(ValidationRequestNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ValidationErrorResponse onValidationRequestException(ValidationRequestNotFoundException e) {
@@ -37,7 +35,6 @@ public class ErrorHandlingControllerAdvice {
         return e.getValidationErrorResponse();
     }
 
-    @ResponseBody
     @ExceptionHandler(ValidationRequestException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ValidationErrorResponse onValidationRequestException(ValidationRequestException e) {
@@ -45,7 +42,6 @@ public class ErrorHandlingControllerAdvice {
         return e.getValidationErrorResponse();
     }
 
-    @ResponseBody
     @ExceptionHandler(Throwable.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String onValidationRequestException(Throwable e) {
