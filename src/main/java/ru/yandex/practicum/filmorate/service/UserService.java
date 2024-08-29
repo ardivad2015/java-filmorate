@@ -34,6 +34,7 @@ public class UserService extends BaseService<User> {
         log.debug("Starting of updating user {}", user.toString());
         User currentUser = storage.get(user.getId());
         onUpdateServiceValidation(user, currentUser);
+        setUserNameByLogin(user);
         emails.remove(currentUser.getEmail());
         logins.remove(currentUser.getLogin());
         storage.put(user.getId(), user);
