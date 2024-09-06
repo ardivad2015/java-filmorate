@@ -1,94 +1,138 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.ConditionsNotMetException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.validation.error.ValidationErrorResponse;
-import ru.yandex.practicum.filmorate.validation.error.Violation;
-import ru.yandex.practicum.filmorate.validation.exceptions.ValidationRequestException;
-import ru.yandex.practicum.filmorate.validation.exceptions.ValidationRequestNotFoundException;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+import ru.yandex.practicum.filmorate.util.error.ErrorResponse;
+import ru.yandex.practicum.filmorate.validation.validator.ParamValidator;
 
 import java.util.*;
 
 @Slf4j
 @Service
-public class UserService extends BaseService<User> {
+@RequiredArgsConstructor
+public class UserService {
 
-    private final Map<String, Long> emails = new HashMap<>();
-    private final Map<String, Long> logins = new HashMap<>();
+    private final UserStorage userStorage;
+
+    public Collection<User> all() {
+        return userStorage.all();
+    }
 
     public User save(User user) {
-        log.debug("Starting of saving user {}", user.toString());
-        onCreateServiceValidation(user);
+        log.debug("starting saving {}", user);
+        onSaveCheck(user);
+        userStorage.save(user);
         setUserNameByLogin(user);
-        user.setId(nextId());
-        log.debug("user id {}", user.getId());
-        storage.put(user.getId(), user);
-        emails.put(user.getEmail(), user.getId());
-        logins.put(user.getLogin(), user.getId());
-        log.info("user was saved");
         return user;
     }
 
-    public User update(User user) {
-        log.debug("Starting of updating user {}", user.toString());
-        User currentUser = storage.get(user.getId());
-        onUpdateServiceValidation(user, currentUser);
-        setUserNameByLogin(user);
-        emails.remove(currentUser.getEmail());
-        logins.remove(currentUser.getLogin());
-        storage.put(user.getId(), user);
-        emails.put(user.getEmail(), user.getId());
-        logins.put(user.getLogin(), user.getId());
-        log.info("User was updated");
+    public User update(User newUser) {
+        log.debug("starting updating {}", newUser);
+        final Long newUserId = newUser.getId();
+        ParamValidator.idValidation(newUserId, "user.id");
+        final User user = findById(newUserId);
+        onUpdateCheck(newUser);
+        setUserNameByLogin(newUser);
+        userStorage.update(newUser, user);
+        return newUser;
+    }
+
+    public Collection<User> allFriends(Long userId) {
+        User user = findById(userId);
+        return user.getFriends().stream()
+                .map(this::findById)
+                .toList();
+    }
+
+    public Collection<User> commonFriends(Long userId, Long otherId) {
+        User firstUser = findById(userId);
+        User secondUser = findById(otherId);
+        return firstUser.getFriends().stream()
+                .filter(id -> secondUser.getFriends().contains(id))
+                .map(this::findById)
+                .toList();
+    }
+
+    public User addFriend(Long userId, Long friendId) {
+        log.debug("starting adding friend userId {}, friendId {}", userId, friendId);
+        final User user = findById(userId);
+        final User friend = findById(friendId);
+        user.getFriends().add(friendId);
+        friend.getFriends().add(userId);
         return user;
     }
 
-    public void onUpdateServiceValidation(User user, User currentUser) {
-        log.info("Starting user on update check");
-        final List<Violation> violations = new ArrayList<>();
-        if (user.getId() == null) {
-            log.debug("User id is NULL");
-            violations.add(new Violation("id","id не может быть пустым", null));
-        } else if (Objects.isNull(currentUser)) {
-            log.debug("User was not found by id {}", user.getId());
-            violations.add(new Violation("id","Не найден пользователь по id", user.getId().toString()));
-            throw new ValidationRequestNotFoundException(new ValidationErrorResponse(violations));
-        } else {
-            if (emails.containsKey(user.getEmail()) && !Objects.equals(user.getId(), emails.get(user.getEmail()))) {
-                log.debug("User email {} is already registered.", user.getEmail());
-                violations.add(new Violation("email", "Такой email уже зарегистрирован", user.getEmail()));
-            }
-            if (logins.containsKey(user.getLogin()) && !Objects.equals(user.getId(), logins.get(user.getLogin()))) {
-                log.debug("User login {} is already registered.", user.getLogin());
-                violations.add(new Violation("login", "Такой логин уже зарегистрирован", user.getLogin()));
-            }
-        }
-        if (!violations.isEmpty()) {
-            throw new ValidationRequestException(new ValidationErrorResponse(violations));
-        }
-        log.info("User on update check was passed");
+    public User removeFriend(Long userId, Long friendId) {
+        log.debug("starting removing friend userId {}, friendId {}", userId, friendId);
+        final User user = findById(userId);
+        final User friend = findById(friendId);
+        user.getFriends().remove(friendId);
+        friend.getFriends().remove(userId);
+        return user;
     }
 
-    public void onCreateServiceValidation(User user) {
-        log.info("Starting user on create check");
-        final List<Violation> violations = new ArrayList<>();
-        if (emails.containsKey(user.getEmail())) {
-            log.debug("User email {} is already registered.", user.getEmail());
-            violations.add(new Violation("email","такой email уже зарегистрирован", user.getEmail()));
+    public User findById(Long userId) {
+        final User user = userStorage.findById(userId);
+        return Optional.ofNullable(user)
+                .orElseThrow(() -> {
+                    log.error("findById. User by id = {} not found", userId);
+                    return new NotFoundException(String.format("Пользователь с id = %d не найден", userId));
+                });
+    }
+
+    private void onUpdateCheck(User newUser) {
+        final List<String> errorList = new ArrayList<>();
+        final Long userId = newUser.getId();
+        final String email = newUser.getEmail();
+        final String login = newUser.getLogin();
+        final Map<String, Long> emails = userStorage.getEmails();
+        final Map<String, Long> logins = userStorage.getLogins();
+        if (emails.containsKey(email)) {
+            Long emailOwner = emails.get(email);
+            if (!Objects.equals(userId, emailOwner)) {
+                errorList.add(String.format("Email %s уже зарегистрирован у пользователя с id %d", email, emailOwner));
+                log.error("onUpdateCheck. Email {} has already been registered or the user id {}", email, emailOwner);
+            }
         }
-        if (logins.containsKey(user.getLogin())) {
-            log.debug("User login {} is already registered.", user.getLogin());
-            violations.add(new Violation("login","Пользователеь с таким логином уже зарегистрирован", user.getLogin()));
+        if (logins.containsKey(login)) {
+            Long loginOwner = logins.get(login);
+            if (!Objects.equals(userId, loginOwner)) {
+                errorList.add(String.format("Логин %s уже зарегистрирован у пользователя с id %d", login, loginOwner));
+                log.error("onUpdateCheck. Login {} has already been registered or the user id {}", login, loginOwner);
+            }
         }
-        if (!violations.isEmpty()) {
-            throw new ValidationRequestException(new ValidationErrorResponse(violations));
+        if (!errorList.isEmpty()) {
+            throw new ConditionsNotMetException(new ErrorResponse(errorList));
         }
-        log.info("User on create check was passed");
+    }
+
+    private void onSaveCheck(User user) {
+        final List<String> errorList = new ArrayList<>();
+        final String email = user.getEmail();
+        final String login = user.getLogin();
+        final Map<String, Long> emails = userStorage.getEmails();
+        final Map<String, Long> logins = userStorage.getLogins();
+        if (emails.containsKey(email)) {
+            errorList.add(String.format("Email %s уже зарегистрирован", email));
+            log.error("onSaveCheck. Email {} has already been registered", email);
+        }
+        if (logins.containsKey(login)) {
+            errorList.add(String.format("Логин %s уже зарегистрирован", login));
+            log.error("onSaveCheck. Login {} has already been registered", login);
+        }
+        if (!errorList.isEmpty()) {
+            throw new ConditionsNotMetException(new ErrorResponse(errorList));
+        }
     }
 
     private void setUserNameByLogin(User user) {
         if (user.getName() == null || user.getName().isBlank()) {
+            log.debug("setting name by login user {}", user);
             user.setName(user.getLogin());
         }
     }
