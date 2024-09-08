@@ -28,5 +28,13 @@ public class User {
     @NotNull
     @PastOrPresent
     private LocalDate birthday;
+
+    public void addFriend(Long friendId) {
+        friends.add(friendId);
+    }
+
+    public void removeFriend(Long friendId) {
+        friends.remove(friendId);
+    }
 }
 

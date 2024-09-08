@@ -62,8 +62,8 @@ public class UserService {
         log.debug("starting adding friend userId {}, friendId {}", userId, friendId);
         final User user = findById(userId);
         final User friend = findById(friendId);
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
+        user.addFriend(friendId);
+        friend.addFriend(userId);
         return user;
     }
 
@@ -71,8 +71,8 @@ public class UserService {
         log.debug("starting removing friend userId {}, friendId {}", userId, friendId);
         final User user = findById(userId);
         final User friend = findById(friendId);
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
+        user.removeFriend(friendId);
+        friend.removeFriend(userId);
         return user;
     }
 
