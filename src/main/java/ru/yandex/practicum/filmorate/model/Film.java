@@ -8,15 +8,15 @@ import lombok.EqualsAndHashCode;
 import ru.yandex.practicum.filmorate.validation.annotation.DateAfter;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
-/**
- * Film.
- */
 @Data
 @EqualsAndHashCode(of = { "id" })
 public class Film {
 
     private Long id;
+    private Set<Long> likes = new HashSet<>();
 
     @NotBlank
     private String name;
@@ -30,4 +30,5 @@ public class Film {
 
     @Positive
     private int duration;
+
 }

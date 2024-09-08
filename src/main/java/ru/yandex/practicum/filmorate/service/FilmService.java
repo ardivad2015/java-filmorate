@@ -1,49 +1,76 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.validation.error.ValidationErrorResponse;
-import ru.yandex.practicum.filmorate.validation.error.Violation;
-import ru.yandex.practicum.filmorate.validation.exceptions.ValidationRequestException;
-import ru.yandex.practicum.filmorate.validation.exceptions.ValidationRequestNotFoundException;
+import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.validation.validator.ParamValidator;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Optional;
 
 @Slf4j
 @Service
-public class FilmService extends BaseService<Film> {
+@RequiredArgsConstructor
+public class FilmService {
+
+    private final FilmStorage filmStorage;
+
+    public Collection<Film> all() {
+        return filmStorage.all();
+    }
 
     public Film save(Film film) {
-        log.debug("Starting of saving film {}", film.toString());
-        film.setId(nextId());
-        log.debug("film id {}", film.getId());
-        storage.put(film.getId(), film);
-        log.trace("film was saved");
+        log.debug("starting saving {}", film);
+        filmStorage.save(film);
         return film;
     }
 
     public Film update(Film film) {
-        log.debug("Starting of film updating {}", film.toString());
-        onUpdateServiceValidation(film);
-        storage.put(film.getId(), film);
-        log.info("Film was updated");
+        log.debug("starting updating {}", film);
+        onUpdateCheck(film);
+        filmStorage.update(film);
         return film;
     }
 
-    public void onUpdateServiceValidation(Film film) {
-        log.info("Starting film on update check");
-        final List<Violation> violations = new ArrayList<>();
-        if (film.getId() == null) {
-            log.debug("Film id is NULL");
-            violations.add(new Violation("id","id не может быть пустым", null));
-            throw new ValidationRequestException(new ValidationErrorResponse(violations));
-        } else if (storage.get(film.getId()) == null) {
-            log.debug("Film was not found by id {}", film.getId());
-            violations.add(new Violation("id","Не найден фильм по id", film.getId().toString()));
-            throw new ValidationRequestNotFoundException(new ValidationErrorResponse(violations));
-        }
-        log.info("Film on update check was passed");
+    public Film findById(Long filmId) {
+        final Film film = filmStorage.findById(filmId);
+        return Optional.ofNullable(film)
+                .orElseThrow(() -> {
+                    log.error("film by id = {} not found", filmId);
+                    return new NotFoundException(String.format("Фильм с id = %d не найден", filmId));
+                });
+    }
+
+    public Film likeIt(Long filmId, User user) {
+        log.debug("like it filmId = {}, user = {}", filmId, user);
+        final Film film = findById(filmId);
+        film.getLikes().add(user.getId());
+        return film;
+    }
+
+    public Film unLikeIt(Long filmId, User user) {
+        log.debug("like it filmId = {}, user = {}", filmId, user);
+        final Film film = findById(filmId);
+        film.getLikes().remove(user.getId());
+        return film;
+    }
+
+    public Collection<Film> findPopular(int count) {
+        log.debug("find top {} popular", count);
+        return all().stream()
+                .sorted(Comparator.comparingInt(film -> -film.getLikes().size()))
+                .limit(count)
+                .toList();
+    }
+
+    private void onUpdateCheck(Film film) {
+        final Long filmId = film.getId();
+        ParamValidator.idValidation(filmId, "film.id");
+        findById(filmId);
     }
 }
