@@ -1,3 +1,3 @@
 # java-filmorate
 Template repository for Filmorate project.
-![Схема базы данных](/rc/main/resources/bd_diagram.png)
+![Схема базы данных](/src/main/resources/bd_diagram.png)
