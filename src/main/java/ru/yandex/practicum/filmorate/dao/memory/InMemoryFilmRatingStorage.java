@@ -14,12 +14,6 @@ import java.util.Collection;
 public class InMemoryFilmRatingStorage extends EnumBasedInMemoryStorage<FilmRating> implements FilmRatingStorage {
 
     public InMemoryFilmRatingStorage() {
-       /*
-    G (1, "G"),
-    PG (2, "PG"),
-    PG13 (3, "PG-13"),
-    R (4, "R"),
-    NC17 (5, "NC-17");*/
         storage.put(1, FilmRating.G);
         storage.put(2, FilmRating.PG);
         storage.put(3, FilmRating.PG13);

@@ -14,14 +14,6 @@ import java.util.*;
 public class InMemoryGenreStorage extends EnumBasedInMemoryStorage<Genre> implements GenreStorage {
 
     public InMemoryGenreStorage() {
-        /*
-    COMEDY ("Комедия"),
-    DRAMA ("Драма"),
-    CARTOON ("Мультфильм"),
-    THRILLER ("Триллер"),
-    DOCUMENTARY  ("Документальный"),
-    ACTION  ("Боевик");
-    */
         storage.put(1, Genre.COMEDY);
         storage.put(2, Genre.DRAMA);
         storage.put(3, Genre.CARTOON);

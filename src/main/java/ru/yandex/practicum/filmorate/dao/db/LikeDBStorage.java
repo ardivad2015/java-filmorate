@@ -12,7 +12,7 @@ public class LikeDBStorage extends BaseDBStorage<LikeDto> {
 
     private static final String FIND_ALL_QUERY = "SELECT * FROM films_likes";
     private static final String FIND_BY_FILM_ID_QUERY = "SELECT * FROM films_likes WHERE film_id = ?";
-    private static final String SIMPLE_INSERT_QUERY = "INSERT INTO films_likes(film_id, user_id) VALUES (?, ?)";
+    private static final String SIMPLE_INSERT_QUERY = "MERGE INTO films_likes(film_id, user_id) VALUES (?, ?)";
     private static final String DELETE_BY_FILM_ID_QUERY = "DELETE FROM films_likes WHERE film_id = ?";
     private static final String DELETE_ONE_QUERY = "DELETE FROM films_likes WHERE user_id = ? AND film_id = ?";
 

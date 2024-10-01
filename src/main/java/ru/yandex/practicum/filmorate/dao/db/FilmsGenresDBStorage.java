@@ -15,7 +15,7 @@ public class FilmsGenresDBStorage extends BaseDBStorage<FilmsGenresDto> {
             "ON f.genre_id = g.genre_id";
     private static final String FIND_BY_FILM_ID_QUERY = "SELECT *,g.genre_name FROM films_genres f LEFT JOIN genres g" +
             " ON f.genre_id = g.genre_id WHERE film_id = ?";
-    private static final String SIMPLE_INSERT_QUERY = "INSERT INTO films_genres(film_id, genre_id) VALUES (?, ?)";
+    private static final String SIMPLE_INSERT_QUERY = "MERGE INTO films_genres(film_id, genre_id) VALUES (?, ?)";
     private static final String DELETE_BY_FILM_ID_QUERY = "DELETE FROM films_genres WHERE film_id = ?";
     private static final String DELETE_ONE_QUERY = "DELETE FROM films_genres WHERE film_id = ? AND genre_id = ?";
 
