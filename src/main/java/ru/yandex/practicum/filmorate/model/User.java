@@ -5,15 +5,14 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 @Data
 @EqualsAndHashCode(of = { "id" })
 public class User {
 
     private Long id;
-    private Set<Long> friends = new HashSet<>();
+    private final Set<Long> friends = new HashSet<>();
 
     @NotBlank
     @Email
@@ -33,8 +32,14 @@ public class User {
         friends.add(friendId);
     }
 
+    public void addFriends(Set<Long> friendsId) {
+        friends.addAll(friendsId);
+    }
+
     public void removeFriend(Long friendId) {
         friends.remove(friendId);
     }
+
+
 }
 

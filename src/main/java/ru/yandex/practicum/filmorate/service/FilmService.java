@@ -3,15 +3,14 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dto.EnumDto;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.exception.NotFoundBadRequestException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.dao.FilmStorage;
 import ru.yandex.practicum.filmorate.validation.validator.ParamValidator;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -19,58 +18,87 @@ import java.util.Optional;
 public class FilmService {
 
     private final FilmStorage filmStorage;
+    private final UserService userService;
+    private final GenreService genreService;
+    private final FilmRatingService filmRatingService;
 
-    public Collection<Film> all() {
+    public Collection<FilmDto> all() {
         return filmStorage.all();
+
     }
 
-    public Film save(Film film) {
-        log.debug("starting saving {}", film);
-        filmStorage.save(film);
-        return film;
+    public FilmDto save(FilmDto filmDto) {
+        log.debug("starting saving {}", filmDto);
+        onSaveCheck(filmDto);
+        return filmStorage.save(filmDto);
     }
 
-    public Film update(Film film) {
-        log.debug("starting updating {}", film);
-        onUpdateCheck(film);
-        filmStorage.update(film);
-        return film;
+    public FilmDto update(FilmDto filmDto) {
+        log.debug("starting updating {}", filmDto);
+        onUpdateCheck(filmDto);
+        return filmStorage.update(filmDto);
     }
 
-    public Film findById(Long filmId) {
-        final Film film = filmStorage.findById(filmId);
-        return Optional.ofNullable(film)
-                .orElseThrow(() -> {
-                    log.error("film by id = {} not found", filmId);
-                    return new NotFoundException(String.format("Фильм с id = %d не найден", filmId));
-                });
+    public FilmDto likeIt(Long filmId, Long userId) {
+        log.debug("like it filmId = {}, userId = {}", filmId, userId);
+        final FilmDto filmDto = findById(filmId);
+        userService.findById(userId);
+        filmStorage.addLike(filmDto, userId);
+        return findById(filmId);
     }
 
-    public Film likeIt(Long filmId, User user) {
-        log.debug("like it filmId = {}, user = {}", filmId, user);
-        final Film film = findById(filmId);
-        film.getLikes().add(user.getId());
-        return film;
+    public FilmDto unLikeIt(Long filmId, Long userId) {
+        log.debug("like it filmId = {}, userId = {}", filmId, userId);
+        final FilmDto filmDto = filmStorage.findById(filmId);
+        userService.findById(userId);
+        filmStorage.removeLike(filmDto, userId);
+        return findById(filmId);
     }
 
-    public Film unLikeIt(Long filmId, User user) {
-        log.debug("like it filmId = {}, user = {}", filmId, user);
-        final Film film = findById(filmId);
-        film.getLikes().remove(user.getId());
-        return film;
-    }
-
-    public Collection<Film> findPopular(int count) {
+    public List<FilmDto> findPopular(int count) {
         log.debug("find top {} popular", count);
-        return all().stream()
-                .sorted(Comparator.comparingInt(film -> -film.getLikes().size()))
-                .limit(count)
-                .toList();
+        return filmStorage.findPopular(count);
     }
 
-    private void onUpdateCheck(Film film) {
+    public FilmDto findById(Long filmId) {
+        return filmStorage.findById(filmId);
+    }
+
+    private void onUpdateCheck(FilmDto film) {
         final Long filmId = film.getId();
         ParamValidator.idValidation(filmId, "film.id");
         findById(filmId);
+        onSaveCheck(film);
     }
+
+    private void onSaveCheck(FilmDto film) {
+        List<String> errors = new ArrayList<>();
+        film.getGenres().forEach(
+                genreDto -> {
+                    try {
+                        genreService.findById(genreDto.getId());
+                    } catch (NotFoundException e) {
+                        errors.add(e.getMessage());
+                    }
+                }
+        );
+        EnumDto filmRatingDto = film.getRating();
+        if (Objects.nonNull(filmRatingDto)) {
+            try {
+                filmRatingService.findById(filmRatingDto.getId());
+            } catch (NotFoundException e) {
+                errors.add(e.getMessage());
+            }
+        }
+        if (!errors.isEmpty()) {
+            StringBuilder errorBuilder = new StringBuilder();
+            errors.forEach(error -> {
+                        errorBuilder.append(error);
+                        errorBuilder.append("\n");
+                    }
+            );
+            throw new NotFoundBadRequestException(errorBuilder.toString()); //только из-за postman тестов
+        }
+    }
+
 }
