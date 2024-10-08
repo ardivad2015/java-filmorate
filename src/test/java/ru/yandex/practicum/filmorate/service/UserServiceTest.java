@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.exception.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
+import ru.yandex.practicum.filmorate.dao.memory.InMemoryUserStorage;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -111,7 +111,7 @@ class UserServiceTest {
     }
 
     @Test
-    public void sizeLikesIncreasesWhenAddFriend() {
+    public void sizeFriendsIncreasesWhenAddFriend() {
         final User user1 = new User();
         user1.setEmail("aa@aaa.aa");
         user1.setLogin("aa");
@@ -124,7 +124,6 @@ class UserServiceTest {
         userService.addFriend(user1.getId(), user2.getId());
         assertEquals(user1.getFriends().size(), 1);
         assertEquals(user1.getFriends().iterator().next(), user2.getId());
-        assertEquals(user2.getFriends().iterator().next(), user1.getId());
     }
 
     @Test

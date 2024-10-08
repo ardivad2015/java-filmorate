@@ -4,9 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ConditionsNotMetException;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+import ru.yandex.practicum.filmorate.dao.UserStorage;
 import ru.yandex.practicum.filmorate.util.error.ErrorResponse;
 import ru.yandex.practicum.filmorate.validation.validator.ParamValidator;
 
@@ -35,10 +34,10 @@ public class UserService {
         log.debug("starting updating {}", newUser);
         final Long newUserId = newUser.getId();
         ParamValidator.idValidation(newUserId, "user.id");
-        final User user = findById(newUserId);
+        findById(newUserId);
         onUpdateCheck(newUser);
         setUserNameByLogin(newUser);
-        userStorage.update(newUser, user);
+        userStorage.update(newUser);
         return newUser;
     }
 
@@ -61,28 +60,21 @@ public class UserService {
     public User addFriend(Long userId, Long friendId) {
         log.debug("starting adding friend userId {}, friendId {}", userId, friendId);
         final User user = findById(userId);
-        final User friend = findById(friendId);
-        user.addFriend(friendId);
-        friend.addFriend(userId);
+        findById(friendId);
+        userStorage.addFriend(user, friendId);
         return user;
     }
 
     public User removeFriend(Long userId, Long friendId) {
         log.debug("starting removing friend userId {}, friendId {}", userId, friendId);
         final User user = findById(userId);
-        final User friend = findById(friendId);
-        user.removeFriend(friendId);
-        friend.removeFriend(userId);
+        findById(friendId);
+        userStorage.removeFriend(user, friendId);
         return user;
     }
 
     public User findById(Long userId) {
-        final User user = userStorage.findById(userId);
-        return Optional.ofNullable(user)
-                .orElseThrow(() -> {
-                    log.error("findById. User by id = {} not found", userId);
-                    return new NotFoundException(String.format("Пользователь с id = %d не найден", userId));
-                });
+        return userStorage.findById(userId);
     }
 
     private void onUpdateCheck(User newUser) {

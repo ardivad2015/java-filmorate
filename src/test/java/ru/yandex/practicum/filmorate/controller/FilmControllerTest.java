@@ -6,7 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
-import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.dto.EnumDto;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.time.LocalDate;
@@ -35,13 +36,18 @@ class FilmControllerTest {
 
     @Test
     void returnFilmsListWhenGet() throws Exception {
-        final Film film1 = new Film();
+        final FilmDto film1 = new FilmDto();
+        EnumDto rating = new EnumDto();
+        rating.setId(1);
+
+        film1.setRating(rating);
         film1.setId(1L);
 
-        final Film film2 = new Film();
-        film1.setId(2L);
+        final FilmDto film2 = new FilmDto();
+        film2.setRating(rating);
+        film2.setId(2L);
 
-        final List<Film> films = Arrays.asList(film1, film2);
+        final List<FilmDto> films = Arrays.asList(film1, film2);
         when(filmService.all()).thenReturn(films);
         String response = this.mockMvc.perform(get("/films"))
                 .andExpect(status().isOk())
@@ -55,10 +61,13 @@ class FilmControllerTest {
     @Test
     void postAndPutResponseStatusBadRequestWhenValidationFails() throws Exception {
         //name is NULL
-        final Film film1 = new Film();
+        final FilmDto film1 = new FilmDto();
         film1.setDescription("Description");
         film1.setDuration(100);
         film1.setReleaseDate(LocalDate.now());
+        EnumDto rating = new EnumDto();
+        rating.setId(1);
+        film1.setRating(rating);
 
         perfomPostObjectBadRequest(film1);
         perfomPutObjectBadRequest(film1);
@@ -93,7 +102,7 @@ class FilmControllerTest {
         perfomPutObjectBadRequest(film1);
     }
 
-    private void perfomPostObjectBadRequest(Film film) throws Exception {
+    private void perfomPostObjectBadRequest(FilmDto film) throws Exception {
         this.mockMvc.perform(post("/films")
                         .contentType("application/json")
                         .content(this.objectMapper.writeValueAsString(film)))
@@ -101,7 +110,7 @@ class FilmControllerTest {
         verify(filmService, never()).save(film);
     }
 
-    private void perfomPutObjectBadRequest(Film film) throws Exception {
+    private void perfomPutObjectBadRequest(FilmDto film) throws Exception {
         this.mockMvc.perform(post("/films")
                         .contentType("application/json")
                         .content(this.objectMapper.writeValueAsString(film)))

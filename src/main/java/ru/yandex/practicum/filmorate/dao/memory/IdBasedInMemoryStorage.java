@@ -1,8 +1,6 @@
-package ru.yandex.practicum.filmorate.storage.base;
+package ru.yandex.practicum.filmorate.dao.memory;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class IdBasedInMemoryStorage<T> {
 
@@ -13,11 +11,11 @@ public class IdBasedInMemoryStorage<T> {
         return ++id;
     }
 
-    public T findById(Long id) {
-        return storage.get(id);
+    protected Optional<T> findInStorageById(Long id) {
+        return Optional.ofNullable(storage.get(id));
     }
 
-    public Collection<T> all() {
+    public Collection<T> getAll() {
         return storage.values();
     }
 }

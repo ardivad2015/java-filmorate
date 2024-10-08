@@ -3,13 +3,16 @@ package ru.yandex.practicum.filmorate.controller;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.ConditionsNotMetException;
+import ru.yandex.practicum.filmorate.exception.NotFoundBadRequestException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.util.error.ErrorResponse;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -53,6 +56,26 @@ public class ErrorHandlingControllerAdvice {
         List<String> errorList = new ArrayList<>();
         errorList.add(e.getMessage());
         return  new ErrorResponse(errorList);
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse onNotFoundBadRequestException(NotFoundBadRequestException e) {
+        List<String> errorList = new ArrayList<>();
+        errorList.add(e.getMessage());
+        return  new ErrorResponse(errorList);
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public String onSQLException(SQLException e) {
+        return e.getMessage();
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public String onDataAccessException(DataAccessException e) {
+        return e.getMessage();
     }
 
     @ExceptionHandler
